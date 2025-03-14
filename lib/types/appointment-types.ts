@@ -1,0 +1,15 @@
+export enum AppointmentType {
+  WellnessExam = "Wellness Exam",
+  Emergency = "Emergency Appointment",
+  SickVisit = "Sick Visit",
+  FollowUp = "Follow-up Appointment",
+  Vaccination = "Vaccination Appointment",
+  SurgicalConsultation = "Surgical Consultation",
+  DentalCare = "Dental Care Appointment",
+  BehavioralConsultation = "Behavioral Consultation",
+  Grooming = "Grooming Appointment",
+  DiagnosticTesting = "Diagnostic Testing",
+  SeniorPetCare = "Senior Pet Care",
+  PreventiveCare = "Preventive Care Consultation",
+  NewPetExam = "New Pet Exam",
+}

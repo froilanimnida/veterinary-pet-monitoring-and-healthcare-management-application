@@ -1,0 +1,338 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NEON_DB_CONNECTION_STRING")
+}
+
+model appointments {
+  appointment_id   Int            @id @default(autoincrement())
+  appointment_uuid String         @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  pet_id           Int?
+  vet_id           Int?
+  appointment_date DateTime?      @db.Timestamptz(6)
+  appointment_type String?        @db.VarChar(50)
+  status           String?        @db.VarChar(20)
+  notes            String?
+  created_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  pets             pets?          @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
+  veterinarians    veterinarians? @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model educational_content {
+  content_id   Int       @id @default(autoincrement())
+  title        String    @db.VarChar(255)
+  content      String
+  category     String?   @db.VarChar(50)
+  tags         String[]
+  author_id    Int?
+  published_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  users        users?    @relation(fields: [author_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model emergency_contacts {
+  contact_id   Int       @id @default(autoincrement())
+  user_id      Int?
+  name         String?   @db.VarChar(100)
+  relationship String?   @db.VarChar(50)
+  phone_number String?   @db.VarChar(20)
+  is_primary   Boolean?  @default(false)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  users        users?    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model forum_comments {
+  comment_id  Int          @id @default(autoincrement())
+  post_id     Int?
+  user_id     Int?
+  content     String
+  created_at  DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?    @default(now()) @db.Timestamptz(6)
+  forum_posts forum_posts? @relation(fields: [post_id], references: [post_id], onDelete: NoAction, onUpdate: NoAction)
+  users       users?       @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model forum_posts {
+  post_id        Int              @id @default(autoincrement())
+  post_uuid      String           @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id        Int?
+  title          String           @db.VarChar(255)
+  content        String
+  category       String?          @db.VarChar(50)
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  forum_comments forum_comments[]
+  users          users?           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model health_monitoring {
+  monitoring_id       Int       @id @default(autoincrement())
+  monitoring_uuid     String    @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  pet_id              Int?
+  activity_level      String?   @db.VarChar(20)
+  weight_kg           Decimal?  @db.Decimal(5, 2)
+  temperature_celsius Decimal?  @db.Decimal(4, 2)
+  symptoms            String?
+  notes               String?
+  recorded_at         DateTime? @default(now()) @db.Timestamptz(6)
+  pets                pets?     @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model medical_records {
+  record_id     Int            @id @default(autoincrement())
+  record_uuid   String         @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  pet_id        Int?
+  vet_id        Int?
+  visit_date    DateTime?      @db.Timestamptz(6)
+  diagnosis     String?
+  treatment     String?
+  notes         String?
+  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  pets          pets?          @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
+  veterinarians veterinarians? @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model medications {
+  medication_id      Int             @id @default(autoincrement())
+  name               String          @db.VarChar(100)
+  description        String?
+  usage_instructions String?
+  side_effects       String?
+  created_at         DateTime?       @default(now()) @db.Timestamptz(6)
+  prescriptions      prescriptions[]
+}
+
+model notifications {
+  notification_id Int       @id @default(autoincrement())
+  user_id         Int?
+  title           String    @db.VarChar(255)
+  content         String
+  type            String?   @db.VarChar(50)
+  is_read         Boolean?  @default(false)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  users           users?    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pets {
+  pet_id             Int                 @id @default(autoincrement())
+  user_id            Int?
+  pet_uuid           String              @db.Uuid
+  name               String              @db.VarChar(100)
+  species            species_type?
+  breed              breed_type?
+  date_of_birth      DateTime?           @db.Date
+  weight_kg          Decimal?            @db.Decimal(5, 2)
+  sex                pet_sex_type?
+  medical_history    String?
+  vaccination_status String?             @db.VarChar(50)
+  created_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  appointments       appointments[]
+  health_monitoring  health_monitoring[]
+  medical_records    medical_records[]
+  users              users?              @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  prescriptions      prescriptions[]
+  vaccinations       vaccinations[]
+}
+
+model prescriptions {
+  prescription_id   Int            @id @default(autoincrement())
+  prescription_uuid String         @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  pet_id            Int?
+  medication_id     Int?
+  vet_id            Int?
+  dosage            String?        @db.VarChar(50)
+  frequency         String?        @db.VarChar(50)
+  start_date        DateTime?      @db.Date
+  end_date          DateTime?      @db.Date
+  refills_remaining Int?
+  created_at        DateTime?      @default(now()) @db.Timestamptz(6)
+  medications       medications?   @relation(fields: [medication_id], references: [medication_id], onDelete: NoAction, onUpdate: NoAction)
+  pets              pets?          @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
+  veterinarians     veterinarians? @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user_settings {
+  user_id                  Int       @id
+  notification_preferences Json?
+  theme_preferences        Json?
+  language_preference      String?   @default("en") @db.VarChar(10)
+  timezone                 String?   @db.VarChar(50)
+  updated_at               DateTime? @default(now()) @db.Timestamptz(6)
+  users                    users     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  user_id             Int                   @id @default(autoincrement())
+  user_uuid           String                @unique @db.Uuid
+  email               String                @unique @db.VarChar(255)
+  password_hash       String                @db.VarChar(255)
+  first_name          String?               @db.VarChar(100)
+  last_name           String?               @db.VarChar(100)
+  phone_number        String?               @db.VarChar(20)
+  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  educational_content educational_content[]
+  emergency_contacts  emergency_contacts[]
+  forum_comments      forum_comments[]
+  forum_posts         forum_posts[]
+  notifications       notifications[]
+  pets                pets[]
+  user_settings       user_settings?
+}
+
+model vaccinations {
+  vaccination_id    Int            @id @default(autoincrement())
+  pet_id            Int?
+  vaccine_name      String?        @db.VarChar(100)
+  administered_date DateTime?      @db.Date
+  next_due_date     DateTime?      @db.Date
+  administered_by   Int?
+  batch_number      String?        @db.VarChar(50)
+  created_at        DateTime?      @default(now()) @db.Timestamptz(6)
+  veterinarians     veterinarians? @relation(fields: [administered_by], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
+  pets              pets?          @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model veterinarians {
+  vet_id               Int                        @id @default(autoincrement())
+  vet_uuid             String?                    @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name           String?                    @db.VarChar(100)
+  last_name            String?                    @db.VarChar(100)
+  license_number       String                     @unique @db.VarChar(50)
+  specialization       veterinary_specialization?
+  email                String?                    @db.VarChar(255)
+  phone_number         String?                    @db.VarChar(20)
+  created_at           DateTime?                  @default(now()) @db.Timestamptz(6)
+  appointments         appointments[]
+  clinic_veterinarians clinic_veterinarians[]
+  medical_records      medical_records[]
+  prescriptions        prescriptions[]
+  vaccinations         vaccinations[]
+}
+
+model clinic_veterinarians {
+  clinic_id     Int
+  vet_id        Int
+  clinics       clinics       @relation(fields: [clinic_id], references: [clinic_id], onDelete: NoAction, onUpdate: NoAction)
+  veterinarians veterinarians @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([clinic_id, vet_id])
+}
+
+model clinics {
+  clinic_id            Int                    @id @default(autoincrement())
+  clinic_uuid          String?                @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                 String                 @db.VarChar(255)
+  address              String?
+  city                 String?                @db.VarChar(100)
+  state                String?                @db.VarChar(100)
+  postal_code          String?                @db.VarChar(20)
+  phone_number         String?                @db.VarChar(20)
+  emergency_services   Boolean?               @default(false)
+  operating_hours      String?
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  clinic_veterinarians clinic_veterinarians[]
+}
+
+enum breed_type {
+  labrador_retriever
+  german_shepherd
+  golden_retriever
+  bulldog
+  beagle
+  poodle
+  rottweiler
+  yorkshire_terrier
+  dachshund
+  boxer
+  siberian_husky
+  french_bulldog
+  shih_tzu
+  doberman_pinscher
+  cocker_spaniel
+  chihuahua
+  australian_shepherd
+  pomeranian
+  bichon_frise
+  border_collie
+  great_dane
+  miniature_schnauzer
+  saint_bernard
+  bernese_mountain_dog
+  maltese
+  english_springer_spaniel
+  pekingese
+  cavalier_king_charles_spaniel
+  samoyed
+  bulldog_french
+  havanese
+  shiba_inu
+  akita
+  chow_chow
+  weimaraner
+  collie
+  newfoundland
+  persian
+  maine_coon
+  ragdoll
+  british_shorthair
+  siberian
+  bengal
+  scottish_fold
+  sphynx
+  burmese
+  birman
+  abyssinian
+  american_shorthair
+  devon_rex
+  norwegian_forest_cat
+  russian_blue
+  oriental_shorthair
+  american_curl
+  egyptian_maau
+  chartreux
+  manx
+  cornish_rex
+  tonkinese
+  selkirk_rex
+  singapura
+  japanese_bobtail
+  balinese
+  somali
+  turkish_angora
+}
+
+enum pet_sex_type {
+  male
+  female
+  prefer_not_to_say @map("prefer not to say")
+}
+
+enum species_type {
+  dog
+  cat
+}
+
+enum user_role_type {
+  user
+  vet
+  admin
+}
+
+enum veterinary_specialization {
+  general_practitioner
+  surgeon
+  dermatologist
+  cardiologist
+  orthopedic
+  dentist
+  ophthalmologist
+  oncologist
+  internal_medicine
+  emergency_and_critical_care
+  behaviorist
+}
