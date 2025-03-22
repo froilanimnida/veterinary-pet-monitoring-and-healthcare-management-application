@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import { useState } from 'react';
 import {
 	Form,
 	FormControl,
@@ -11,15 +11,22 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CardContent } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
-// import { signIn } from 'next-auth/react';
+import { getSession, signIn } from 'next-auth/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/lib/auth-definitions';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 
-function UserLoginForm() {
-	const loginFormFields = [
+const UserLoginForm = () => {
+	const [isLoading, setIsLoading] = useState(false);
+	const [isLoggedIn, setIsLoggedIn] = useState(false);
+	const loginFormFields: {
+		label: string;
+		placeholder: string;
+		name: 'email' | 'password';
+		description: string;
+	}[] = [
 		{
 			label: 'Email',
 			placeholder: 'Email',
@@ -40,51 +47,83 @@ function UserLoginForm() {
 		},
 		progressive: true,
 		resolver: zodResolver(LoginSchema),
+		shouldFocusError: true,
+		mode: 'onBlur',
 	});
 
-	const onSubmit = (values: z.infer<typeof LoginSchema>) => {
-		console.log(values);
+	const onSubmit = async (values: z.infer<typeof LoginSchema>) => {
+		setIsLoading(true);
+		toast.promise(
+			async () => {
+				const result = await signIn('credentials', {
+					email: values.email,
+					password: values.password,
+					callbackUrl: '/',
+					redirect: false,
+				});
+				if (!result?.ok) {
+					return Promise.reject();
+				}
+				console.log('Result: ', result);
+				return result;
+			},
+			{
+				loading: 'Signing in...',
+				success: () => {
+					setIsLoggedIn(true);
+					return 'Successfully signed in';
+				},
+				error: 'Failed to sign in. Please check your credentials.',
+			},
+		);
+		setIsLoading(false);
+		if (isLoggedIn) {
+			const session = await getSession();
+			if (session) {
+				console.log('Session: ', session.user);
+			}
+		}
 	};
+
 	return (
-		<CardContent className='space-y-8'>
-			<Form {...form}>
-				<form
-					onSubmit={form.handleSubmit(onSubmit)}
-					className='space-y-8'>
-					{loginFormFields.map((field, index) => (
-						<FormControl key={index}>
+		<Form {...form}>
+			<form
+				onSubmit={form.handleSubmit(onSubmit)}
+				className='space-y-8'>
+				{loginFormFields.map((loginField) => (
+					<FormField
+						key={loginField.name}
+						control={form.control}
+						name={loginField.name}
+						render={({ field, fieldState }) => (
 							<FormItem>
-								<FormLabel>{field.label}</FormLabel>
-								<FormField
-									control={form.control}
-									name={field.name as 'email' | 'password'}
-									render={({ field }) => (
-										<Input
-											type='text'
-											placeholder={
-												loginFormFields[index]
-													.placeholder
-											}
-											{...field}
-										/>
-									)}
-								/>
+								<FormLabel>{loginField.label}</FormLabel>
+								<FormControl>
+									<Input
+										type='text'
+										placeholder={loginField.placeholder}
+										{...field}
+									/>
+								</FormControl>
 								<FormDescription>
-									{field.description}
+									{loginField.description}
 								</FormDescription>
-								<FormMessage />
+								<FormMessage className='text-red-500'>
+									{fieldState.error?.message}
+								</FormMessage>
 							</FormItem>
-						</FormControl>
-					))}
-					<Button
-						className='w-full'
-						type='submit'>
-						Login
-					</Button>
-				</form>
-			</Form>
-		</CardContent>
+						)}
+					/>
+				))}
+				<Button
+					disabled={isLoading}
+					className='w-full disabled:opacity-50'
+					type='submit'>
+					Login
+				</Button>
+			</form>
+		</Form>
 	);
-}
+};
 
 export default UserLoginForm;

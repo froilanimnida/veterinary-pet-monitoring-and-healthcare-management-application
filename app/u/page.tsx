@@ -1,13 +1,13 @@
-import { AppSidebar } from '@/components/app-sidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import React from 'react';
+'use client';
+import { useSession } from 'next-auth/react';
 
 function UserDashboard() {
+	const { data: session } = useSession();
+
 	return (
 		<div>
-			<SidebarProvider>
-				<AppSidebar />
-			</SidebarProvider>
+			<h1>Welcome, {session?.user?.name || 'Guest'}!</h1>
+			<p>Your role: {session?.user?.role || 'No role assigned'}</p>
 		</div>
 	);
 }

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import SessionProviderWrapper from '@/context/session-provider-context';
 
 const inter = Inter({
 	variable: '--inter',
@@ -25,8 +27,12 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<body className={`${inter.className} antialiased`}>
-				{children}
-				<Toaster />
+				<TooltipProvider>
+					<SessionProviderWrapper>
+						{children}
+						<Toaster />
+					</SessionProviderWrapper>
+				</TooltipProvider>
 			</body>
 		</html>
 	);

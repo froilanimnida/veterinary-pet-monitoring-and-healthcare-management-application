@@ -11,14 +11,33 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CardContent } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ClinicSignUpSchema } from '@/lib/clinic-signup-definition';
+import { NewClinicAccountSchema } from '@/lib/clinic-signup-definition';
+import { Checkbox } from '../ui/checkbox';
+import toast from 'react-hot-toast';
+import { createClinicAccount } from '@/actions/auth';
 
-function ClinicSignUp() {
-	const formFieldsArray = [
+const ClinicSignUp = () => {
+	const clinicSignUpFields: {
+		label: string;
+		placeholder: string;
+		name:
+			| 'name'
+			| 'address'
+			| 'city'
+			| 'state'
+			| 'postal_code'
+			| 'phone_number'
+			| 'first_name'
+			| 'last_name'
+			| 'email'
+			| 'password'
+			| 'confirm_password';
+
+		description: string;
+	}[] = [
 		{
 			label: 'Clinic Name',
 			placeholder: 'Clinic Name',
@@ -56,10 +75,34 @@ function ClinicSignUp() {
 			description: 'The phone number of your clinic.',
 		},
 		{
-			label: 'Emergency Services',
-			placeholder: 'Emergency Services',
-			name: 'emergency_services',
-			description: 'The emergency services your clinic provides.',
+			label: 'First Name',
+			placeholder: 'First Name',
+			name: 'first_name',
+			description: 'The first name of the clinic owner.',
+		},
+		{
+			label: 'Last Name',
+			placeholder: 'Last Name',
+			name: 'last_name',
+			description: 'The last name of the clinic owner.',
+		},
+		{
+			label: 'Email',
+			placeholder: 'Email',
+			name: 'email',
+			description: 'The email of the clinic owner.',
+		},
+		{
+			label: 'Password',
+			placeholder: 'Password',
+			name: 'password',
+			description: 'The password of the clinic owner.',
+		},
+		{
+			label: 'Confirm Password',
+			placeholder: 'Confirm Password',
+			name: 'confirm_password',
+			description: 'Confirm the password of the clinic owner.',
 		},
 	];
 	const clinicSignUpForm = useForm({
@@ -70,57 +113,100 @@ function ClinicSignUp() {
 			state: '',
 			postal_code: '',
 			phone_number: '',
-			emergency_services: '',
+			emergency_services: false,
+			first_name: '',
+			last_name: '',
+			email: '',
+			password: '',
+			confirm_password: '',
 		},
-		resolver: zodResolver(ClinicSignUpSchema),
+		resolver: zodResolver(NewClinicAccountSchema),
 		progressive: true,
+		shouldFocusError: true,
+		mode: 'onBlur',
 	});
-	const onSubmit = (values: z.infer<typeof ClinicSignUpSchema>) => {
-		console.log(values);
+	const onSubmit = (values: z.infer<typeof NewClinicAccountSchema>) => {
+		toast.promise(createClinicAccount(values), {
+			loading: 'Creating account...',
+			success: 'Successfully created account',
+			error: (error) => {
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+
+				if (
+					errorMessage.includes(
+						'email_or_phone_number_already_exists',
+					)
+				) {
+					return 'Email or phone number already exists';
+				}
+				return errorMessage;
+			},
+		});
 	};
 	return (
-		<CardContent className='space-y-8'>
-			<form onSubmit={clinicSignUpForm.handleSubmit(onSubmit)}>
-				<Form {...clinicSignUpForm}>
-					{formFieldsArray.map((field, index) => (
-						<FormControl key={index}>
-							<FormItem className='mb-5'>
-								<FormLabel>{field.label}</FormLabel>
-								<FormField
-									control={clinicSignUpForm.control}
-									name={
-										field.name as
-											| 'name'
-											| 'address'
-											| 'city'
-											| 'state'
-											| 'postal_code'
-											| 'phone_number'
-											| 'emergency_services'
-									}
-									render={({ field }) => (
-										<Input
-											type='text'
-											placeholder={
-												formFieldsArray[index]
-													.placeholder
-											}
-											{...field}
-										/>
-									)}
-								/>
+		<Form {...clinicSignUpForm}>
+			<form
+				onSubmit={clinicSignUpForm.handleSubmit(onSubmit)}
+				className='space-y-8'>
+				{clinicSignUpFields.map((clinicSignUpField) => (
+					<FormField
+						key={clinicSignUpField.name}
+						control={clinicSignUpForm.control}
+						name={clinicSignUpField.name}
+						render={({ field, fieldState }) => (
+							<FormItem>
+								<FormLabel>{clinicSignUpField.label}</FormLabel>
+								<FormControl>
+									<Input
+										required
+										type={
+											clinicSignUpField.name.includes(
+												'password',
+											)
+												? 'password'
+												: 'text'
+										}
+										placeholder={
+											clinicSignUpField.placeholder
+										}
+										{...field}
+									/>
+								</FormControl>
 								<FormDescription>
-									{field.description}
+									{clinicSignUpField.description}
 								</FormDescription>
-								<FormMessage />
+								<FormMessage className='text-red-500'>
+									{fieldState.error?.message}
+								</FormMessage>
 							</FormItem>
-						</FormControl>
-					))}
-				</Form>
+						)}
+					/>
+				))}
+				<FormField
+					name='emergency_services'
+					render={({ field, fieldState }) => (
+						<FormItem>
+							<FormLabel>Emergency Services</FormLabel>
+							<FormControl>
+								<Checkbox
+									required
+									{...field}
+								/>
+							</FormControl>
+							<FormDescription>
+								Do you provide emergency services?
+							</FormDescription>
+							<FormMessage className='text-red-500'>
+								{fieldState.error?.message}
+							</FormMessage>
+						</FormItem>
+					)}
+				/>
 				<Button type='submit'>Sign Up</Button>
 			</form>
-		</CardContent>
+		</Form>
 	);
-}
+};
 
 export default ClinicSignUp;

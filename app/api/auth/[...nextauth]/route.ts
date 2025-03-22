@@ -1,78 +1,40 @@
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import NextAuth, { type AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-// import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
-import { verifyPassword } from '@/utils/security/password-check';
+import { config } from '@/lib/config/next-auth-config';
 
 const prisma = new PrismaClient();
-const handler = NextAuth({
+
+const authOptions: AuthOptions = {
 	adapter: PrismaAdapter(prisma),
 	session: { strategy: 'jwt' },
 	pages: {
 		signIn: '/auth/login',
 	},
-	providers: [
-		CredentialsProvider({
-			name: 'Credentials',
-			credentials: {
-				email: {
-					label: 'Email',
-					type: 'email',
-					placeholder: 'yourmail@example.com',
-				},
-				password: { label: 'Password', type: 'password' },
-			},
-			async authorize(credentials, req) {
-				console.log(req);
-				if (!credentials) {
-					throw new Error('Missing credentials');
-				}
-				if (
-					!credentials.email ||
-					!credentials.password ||
-					!credentials
-				) {
-					throw new Error('Missing credentials');
-				}
-				console.log('credentials: ', credentials);
+	providers: config.providers,
 
-				const user = await prisma.users.findUnique({
-					where: { email: credentials.email },
-				});
-				console.log(user);
-				console.log('after finding user');
-
-				if (
-					!user ||
-					!(await verifyPassword(
-						credentials.password,
-						user.password_hash,
-					))
-				) {
-					return null;
-				}
-				console.log("after checking user's password");
-
-				return {
-					id: user.user_id.toString(),
-					email: user.email,
-					name: user.first_name
-						? `${user.first_name} ${user.last_name || ''}`.trim()
-						: null,
-				};
-			},
-		}),
-	],
 	callbacks: {
-		async session({ session, token }) {
-			if (token && session && session.user)
-				session.user.email = token.sub;
-			console.log(token);
+		async jwt({ token, user }) {
+			if (user) {
+				token.id = user.id;
+				token.email = user.email;
+				token.role = user.role;
+			}
+			return token;
+		},
+		session({ session, token }) {
+			if (token && session.user) {
+				session.user.email = token.email;
+				session.user.role = token.role;
+			}
 			return session;
+		},
+		signIn() {
+			return true;
 		},
 	},
 	secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

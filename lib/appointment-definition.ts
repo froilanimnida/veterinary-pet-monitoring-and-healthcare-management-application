@@ -6,4 +6,5 @@ export const AppointmentSchema = z.object({
 	appointment_date: z.date(),
 	appointment_type: z.string(),
 	notes: z.string(),
+	status: z.string(),
 });

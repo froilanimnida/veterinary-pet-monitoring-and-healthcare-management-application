@@ -1,10 +1,11 @@
+import type { AuthState } from '@/lib/types/auth-state-types';
 import { create } from 'zustand';
 
-export const useAuthStore = create((set) => ({
-	auth: {
-		user: { email: '', user_uuid: '', role: '' },
-		login: (user: { email: string; user_uuid: string; role: '' }) =>
-			set({ auth: { user } }),
-		logout: () => set({ auth: { user: null } }),
-	},
+export const useAuthStore = create<AuthState>((set) => ({
+	user: { email: '', user_id: '', role: '', isLoggedIn: false },
+	login: (state) => set({ user: state }),
+	logout: () =>
+		set({
+			user: { email: '', user_id: '', role: '', isLoggedIn: false },
+		}),
 }));

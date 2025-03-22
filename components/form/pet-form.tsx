@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { Breeds } from '@/lib/types/breed-types';
+import { CatBreeds, DogBreeds } from '@/lib/types/breed-types';
 import {
 	Popover,
 	PopoverContent,
@@ -33,15 +33,20 @@ import { PetSchema } from '@/lib/pet-definition';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 
-const breedsArray = Object.values(Breeds);
-
 const AddPetForm = () => {
-	const [date, setDate] = useState<Date | undefined>(undefined);
 	const [selectedBreed, setSelectedBreed] = useState<string | undefined>(
 		undefined,
 	);
 	const [selectedSpecies, setSelectedSpecies] = useState<string>('dog');
 
+	const getBreedOptions = () => {
+		if (selectedSpecies === 'dog') {
+			return Object.values(DogBreeds);
+		} else if (selectedSpecies === 'cat') {
+			return Object.values(CatBreeds);
+		}
+		return [];
+	};
 	const form = useForm({
 		shouldFocusError: true,
 		defaultValues: {
@@ -131,7 +136,7 @@ const AddPetForm = () => {
 			label: 'Breed',
 			placeholder: 'Breed',
 			description: 'Select the breed of your pet',
-			options: breedsArray.map((breed) => ({
+			options: getBreedOptions().map((breed) => ({
 				value: breed,
 				label: breed.replaceAll('_', ' ').toLocaleUpperCase(),
 			})),
@@ -150,10 +155,12 @@ const AddPetForm = () => {
 				{ value: 'female', label: 'Female' },
 				{ value: 'prefer_not_to_say', label: 'Prefer not to say' },
 			],
+			defaultValue: 'prefer_not_to_say',
 		},
 	];
 
 	const onSubmit = (values: z.infer<typeof PetSchema>) => {
+		alert('Form submitted! Check the console for the values');
 		console.log('Form submitted:', values);
 	};
 
@@ -162,25 +169,36 @@ const AddPetForm = () => {
 			<form
 				onSubmit={form.handleSubmit(onSubmit)}
 				className='space-y-4'>
-				{textFields.map((field) => (
+				{textFields.map((textField) => (
 					<FormField
-						key={field.name}
+						key={textField.name}
 						control={form.control}
-						name={field.name}
-						render={({ field: formField }) => (
+						name={textField.name}
+						render={({ field, formState }) => (
 							<FormItem>
-								<FormLabel>{field.label}</FormLabel>
+								<FormLabel>{textField.label}</FormLabel>
 								<FormControl>
 									<Input
-										{...formField}
-										type={field.type || 'text'}
-										placeholder={field.placeholder}
+										{...field}
+										type={textField.type || 'text'}
+										placeholder={textField.placeholder}
+										{...(textField.type === 'number' ?
+											{
+												onChange: (e) =>
+													field.onChange(
+														+e.target.value,
+													),
+												value: field.value,
+											}
+										:	{})}
 									/>
 								</FormControl>
 								<FormDescription>
-									{field.description}
+									{textField.description}
 								</FormDescription>
-								<FormMessage />
+								<FormMessage>
+									{formState.errors[textField.name]?.message}
+								</FormMessage>
 							</FormItem>
 						)}
 					/>
@@ -188,8 +206,8 @@ const AddPetForm = () => {
 				<FormField
 					name='date_of_birth'
 					control={form.control}
-					render={({ field }) => (
-						<FormItem {...field}>
+					render={({ field, fieldState }) => (
+						<FormItem>
 							<FormLabel>Date of Birth</FormLabel>
 							<FormControl>
 								<Popover>
@@ -198,23 +216,40 @@ const AddPetForm = () => {
 											variant='outline'
 											className={cn(
 												'w-full justify-start text-left font-normal',
-												!date &&
+												!field.value &&
 													'text-muted-foreground',
 											)}>
 											<CalendarIcon className='mr-2 h-4 w-4' />
-											{date ? (
-												format(date, 'PPP')
-											) : (
-												<span>Pick a date</span>
-											)}
+											{field.value ?
+												format(
+													field.value,
+													'MM/dd/yyyy',
+												)
+											:	<span>Pick a date</span>}
 										</Button>
 									</PopoverTrigger>
 									<PopoverContent className='w-auto p-0'>
 										<Calendar
 											mode='single'
-											selected={date}
-											onSelect={setDate}
+											selected={field.value}
+											onSelect={(date) => {
+												if (!date) {
+													field.onChange(null);
+													return;
+												}
+
+												const dateOnly = new Date(
+													date.getFullYear(),
+													date.getMonth(),
+													date.getDate(),
+												);
+
+												field.onChange(dateOnly);
+											}}
 											initialFocus
+											disabled={(date) =>
+												date > new Date()
+											}
 											className='bg-white'
 										/>
 									</PopoverContent>
@@ -223,20 +258,30 @@ const AddPetForm = () => {
 							<FormDescription>
 								Enter your pet&apos;s date of birth
 							</FormDescription>
-							<FormMessage />
+							<FormMessage>
+								{fieldState.error?.message}
+							</FormMessage>
 						</FormItem>
-					)}></FormField>
+					)}
+				/>
 				{selectFields.map((selectField) => (
 					<FormField
 						key={selectField.name}
 						control={form.control}
 						name={selectField.name}
-						render={({ field }) => (
-							<FormItem {...field}>
+						render={({ field, fieldState }) => (
+							<FormItem>
 								<FormLabel>{selectField.label}</FormLabel>
 								<Select
-									onValueChange={selectField.onChange}
-									defaultValue={selectField.defaultValue}>
+									onValueChange={(value) => {
+										field.onChange(value);
+										if (selectField.onChange)
+											selectField.onChange(value);
+									}}
+									value={field.value}
+									defaultValue={
+										field.value || selectField.defaultValue
+									}>
 									<FormControl>
 										<SelectTrigger>
 											<SelectValue
@@ -259,7 +304,9 @@ const AddPetForm = () => {
 								<FormDescription>
 									{selectField.description}
 								</FormDescription>
-								<FormMessage />
+								<FormMessage>
+									{fieldState.error?.message}
+								</FormMessage>
 							</FormItem>
 						)}
 					/>

@@ -80,7 +80,7 @@ enum SpeciesType {
 enum UserRoleType {
 	User = 'user',
 	Client = 'client',
-	Vet = 'vet',
+	Veterinarian = 'veterinarian',
 	Admin = 'admin',
 }
 
@@ -98,10 +98,43 @@ enum VeterinarySpecialization {
 	Behaviorist = 'behaviorist',
 }
 
+enum AppointmentType {
+	WellnessExam = 'wellness_exam',
+	Vaccination = 'vaccination',
+	SickVisit = 'sick_visit',
+	FollowUp = 'follow_up',
+	Surgery = 'surgery',
+	DentalCleaning = 'dental_cleaning',
+	Emergency = 'emergency',
+	LaboratoryWork = 'laboratory_work',
+	Imaging = 'imaging',
+	Grooming = 'grooming',
+	PhysicalTherapy = 'physical_therapy',
+	BehavioralConsultation = 'behavioral_consultation',
+	NutritionConsultation = 'nutrition_consultation',
+	Euthanasia = 'euthanasia',
+	NewPetConsultation = 'new_pet_consultation',
+	SeniorPetCare = 'senior_pet_care',
+	ParasiteControl = 'parasite_control',
+	Microchipping = 'microchipping',
+	MedicationRefill = 'medication_refill',
+	SpayNeuter = 'spay_neuter',
+	AllergyTesting = 'allergy_testing',
+	OrthopedicEvaluation = 'orthopedic_evaluation',
+	Ophthalmology = 'ophthalmology',
+	Dermatology = 'dermatology',
+	Cardiology = 'cardiology',
+	Neurology = 'neurology',
+	Oncology = 'oncology',
+	HospiceCare = 'hospice_care',
+	Telemedicine = 'telemedicine',
+}
+
 export {
 	BreedType,
 	PetSexType,
 	SpeciesType,
 	UserRoleType,
 	VeterinarySpecialization,
+	AppointmentType,
 };

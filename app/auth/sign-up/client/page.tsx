@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import MaxWidthContainer from '@/components/shared/layout/max-width-container';
 import {
@@ -5,6 +6,7 @@ import {
 	CardHeader,
 	CardTitle,
 	CardDescription,
+	CardContent,
 } from '@/components/ui/card';
 import ClientSignUpForm from '@/components/form/clinic-form';
 
@@ -16,7 +18,9 @@ function ClientSignUp() {
 					<CardTitle>Sign Up</CardTitle>
 					<CardDescription>Create new clinic account</CardDescription>
 				</CardHeader>
-				<ClientSignUpForm />
+				<CardContent className='space-y-4'>
+					<ClientSignUpForm />
+				</CardContent>
 			</Card>
 		</MaxWidthContainer>
 	);

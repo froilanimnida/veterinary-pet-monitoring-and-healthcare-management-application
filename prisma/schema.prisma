@@ -167,12 +167,13 @@ model user_settings {
 
 model users {
   user_id             Int                   @id @default(autoincrement())
-  user_uuid           String                @unique @db.Uuid
+  user_uuid           String                @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   email               String                @unique @db.VarChar(255)
   password_hash       String                @db.VarChar(255)
   first_name          String?               @db.VarChar(100)
   last_name           String?               @db.VarChar(100)
   phone_number        String?               @db.VarChar(20)
+  role               role_type             @default(user)
   created_at          DateTime?             @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
   educational_content educational_content[]
@@ -182,6 +183,8 @@ model users {
   notifications       notifications[]
   pets                pets[]
   user_settings       user_settings?
+  veterinarians       veterinarians[]
+  clinics             clinics[]
 }
 
 model vaccinations {
@@ -198,32 +201,31 @@ model vaccinations {
 }
 
 model veterinarians {
+  user_id              Int?
   vet_id               Int                        @id @default(autoincrement())
   vet_uuid             String?                    @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  first_name           String?                    @db.VarChar(100)
-  last_name            String?                    @db.VarChar(100)
   license_number       String                     @unique @db.VarChar(50)
   specialization       veterinary_specialization?
-  email                String?                    @db.VarChar(255)
-  phone_number         String?                    @db.VarChar(20)
   created_at           DateTime?                  @default(now()) @db.Timestamptz(6)
   appointments         appointments[]
   clinic_veterinarians clinic_veterinarians[]
   medical_records      medical_records[]
   prescriptions        prescriptions[]
   vaccinations         vaccinations[]
+  users                users?                     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model clinic_veterinarians {
   clinic_id     Int
   vet_id        Int
-  clinics       clinics       @relation(fields: [clinic_id], references: [clinic_id], onDelete: NoAction, onUpdate: NoAction)
+  clinics       clinics       @relation(fields: [clinic_id], references: [clinic_id], onDelete: Cascade, onUpdate: NoAction)
   veterinarians veterinarians @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([clinic_id, vet_id])
 }
 
 model clinics {
+  user_id              Int?
   clinic_id            Int                    @id @default(autoincrement())
   clinic_uuid          String?                @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name                 String                 @db.VarChar(255)
@@ -236,6 +238,7 @@ model clinics {
   operating_hours      String?
   created_at           DateTime?              @default(now()) @db.Timestamptz(6)
   clinic_veterinarians clinic_veterinarians[]
+  users                users[]
 }
 
 enum breed_type {
@@ -306,6 +309,13 @@ enum breed_type {
   turkish_angora
 }
 
+enum role_type {
+  user
+  admin
+  client
+  veterinarian
+}
+
 enum pet_sex_type {
   male
   female
@@ -335,4 +345,36 @@ enum veterinary_specialization {
   internal_medicine
   emergency_and_critical_care
   behaviorist
+}
+
+enum appointment_type {
+  wellness_exam
+  vaccination
+  sick_visit
+  follow_up
+  surgery
+  dental_cleaning
+  emergency
+  laboratory_work
+  imaging
+  grooming
+  physical_therapy
+  behavioral_consultation
+  nutrition_consultation
+  euthanasia
+  new_pet_consultation
+  senior_pet_care
+  parasite_control
+  microchipping
+  medication_refill
+  spay_neuter
+  allergy_testing
+  orthopedic_evaluation
+  ophthalmology
+  dermatology
+  cardiology
+  neurology
+  oncology
+  hospice_care
+  telemedicine
 }

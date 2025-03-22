@@ -1,35 +1,43 @@
-import React from "react";
+import React from 'react';
 import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+	Card,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+	CardContent,
+} from '@/components/ui/card';
+import { Metadata } from 'next';
+import Link from 'next/link';
+import ResponsiveContainer from '@/components/shared/layout/responsive-container';
+import UserLoginForm from '@/components/form/user-login-form';
 
-import Link from "next/link";
-import ResponsiveContainer from "@/components/shared/layout/responsive-container";
-import UserLoginForm from "@/components/form/user-login-form";
+export const metadata: Metadata = {
+	title: 'Pawsitive | Login',
+	description: 'Login to your account',
+};
 
-const LoginPage = () => {
-  return (
-    <ResponsiveContainer className="flex justify-center items-center">
-      <>
-        <section className="flex justify-center items-center max-w-1/2 mx-auto"></section>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Login to continue</CardDescription>
-          </CardHeader>
-          <UserLoginForm />
-          <CardFooter className="flex flex-col gap-4">
-            <Link href={"/auth/sign-up"}>Sign up instead</Link>
-          </CardFooter>
-        </Card>
-      </>
-    </ResponsiveContainer>
-  );
+const LoginPage = async () => {
+	return (
+		<ResponsiveContainer className='flex justify-center items-center'>
+			<Card>
+				<CardHeader>
+					<CardTitle>Login</CardTitle>
+					<CardDescription>Login to continue</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<UserLoginForm />
+				</CardContent>
+				<CardFooter className='flex justify-center'>
+					<Link
+						href={'/auth/sign-up'}
+						className='text-sm'>
+						Sign up instead
+					</Link>
+				</CardFooter>
+			</Card>
+		</ResponsiveContainer>
+	);
 };
 
 export default LoginPage;

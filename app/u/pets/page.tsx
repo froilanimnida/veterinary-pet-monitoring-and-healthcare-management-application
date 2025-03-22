@@ -9,6 +9,21 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SkeletonCard } from '@/components/ui/skeleton-card';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
+import AddPetForm from '@/components/form/pet-form';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+	title: 'PawsitiveHealth | User Pets',
+	description: 'PawsitiveHealth is a pet health care service.',
+};
 
 const PetList = () => {
 	const pets = [
@@ -36,10 +51,28 @@ const PetList = () => {
 			age: 1,
 			image: '/images/max.jpg',
 		},
+		{
+			name: 'Max',
+			breed: 'Labrador',
+			age: 1,
+			image: '/images/max.jpg',
+		},
+		{
+			name: 'Max',
+			breed: 'Labrador',
+			age: 1,
+			image: '/images/max.jpg',
+		},
+		{
+			name: 'Max',
+			breed: 'Labrador',
+			age: 1,
+			image: '/images/max.jpg',
+		},
 	];
 
 	return (
-		<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+		<div className='grid grid-cols-1 md:grid-cols-3 w-full lg:grid-cols-4 gap-4'>
 			{pets.map((pet, index) => (
 				<Card key={index}>
 					<CardHeader>
@@ -62,6 +95,21 @@ function PetsPage() {
 			<Suspense fallback={<SkeletonCard />}>
 				<PetList />
 			</Suspense>
+			<Dialog>
+				<DialogTrigger asChild>
+					<Button>Add Pet</Button>
+				</DialogTrigger>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Add a new pet to your account</DialogTitle>
+						<DialogDescription>
+							Please provide the details of your pet to add it to
+							your account.
+						</DialogDescription>
+					</DialogHeader>
+					<AddPetForm />
+				</DialogContent>
+			</Dialog>
 		</section>
 	);
 }
