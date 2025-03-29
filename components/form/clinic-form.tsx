@@ -11,91 +11,108 @@ import { Checkbox } from "@/components/ui/checkbox";
 import toast from "react-hot-toast";
 import { createClinicAccount } from "@/actions/auth";
 import { OperatingHoursField } from "./operating-hours-field";
+import type { TextFormField } from "@/types/forms/text-form-field";
 
 const ClinicSignUp = () => {
-    const clinicSignUpFields: {
-        label: string;
-        placeholder: string;
-        name:
-            | "name"
-            | "address"
-            | "city"
-            | "state"
-            | "postal_code"
-            | "phone_number"
-            | "first_name"
-            | "last_name"
-            | "email"
-            | "password"
-            | "confirm_password";
-
-        description: string;
-    }[] = [
+    const clinicSignUpFields: TextFormField[] = [
         {
             label: "Clinic Name",
             placeholder: "Clinic Name",
             name: "name",
             description: "The name of your clinic.",
+            required: true,
+            autoComplete: "organization",
+            type: "text",
         },
         {
             label: "Address",
             placeholder: "Address",
             name: "address",
             description: "The address of your clinic.",
+            required: true,
+            autoComplete: "street-address",
+            type: "text",
         },
         {
             label: "City",
             placeholder: "City",
             name: "city",
             description: "The city where your clinic is located.",
+            required: true,
+            autoComplete: "address-level2",
+            type: "text",
         },
         {
             label: "State",
             placeholder: "State",
             name: "state",
             description: "The state where your clinic is located.",
+            required: true,
+            autoComplete: "address-level1",
+            type: "text",
         },
         {
             label: "Postal Code",
             placeholder: "Postal Code",
             name: "postal_code",
             description: "The postal code of your clinic.",
+            required: true,
+            autoComplete: "postal-code",
+            type: "text",
         },
         {
             label: "Phone Number",
             placeholder: "Phone Number",
             name: "phone_number",
             description: "The phone number of your clinic.",
+            required: true,
+            autoComplete: "tel",
+            type: "tel",
         },
         {
             label: "First Name",
             placeholder: "First Name",
             name: "first_name",
             description: "The first name of the clinic owner.",
+            required: true,
+            autoComplete: "given-name",
+            type: "text",
         },
         {
             label: "Last Name",
             placeholder: "Last Name",
             name: "last_name",
             description: "The last name of the clinic owner.",
+            required: true,
+            autoComplete: "family-name",
+            type: "text",
         },
         {
             label: "Email",
             placeholder: "Email",
             name: "email",
             description: "The email of the clinic owner.",
+            required: true,
+            autoComplete: "email",
+            type: "email",
         },
         {
             label: "Password",
             placeholder: "Password",
             name: "password",
             description: "The password of the clinic owner.",
+            required: true,
+            autoComplete: "new-password",
+            type: "password",
         },
         {
             label: "Confirm Password",
             placeholder: "Confirm Password",
             name: "confirm_password",
             description: "Confirm the password of the clinic owner.",
+            required: true,
+            autoComplete: "new-password",
+            type: "password",
         },
     ];
     const clinicSignUpForm = useForm({
@@ -147,14 +164,28 @@ const ClinicSignUp = () => {
                     <FormField
                         key={clinicSignUpField.name}
                         control={clinicSignUpForm.control}
-                        name={clinicSignUpField.name}
+                        name={
+                            clinicSignUpField.name as
+                                | "name"
+                                | "address"
+                                | "city"
+                                | "state"
+                                | "postal_code"
+                                | "phone_number"
+                                | "first_name"
+                                | "last_name"
+                                | "email"
+                                | "password"
+                                | "confirm_password"
+                        }
                         render={({ field, fieldState }) => (
                             <FormItem>
                                 <FormLabel>{clinicSignUpField.label}</FormLabel>
                                 <FormControl>
                                     <Input
-                                        required
-                                        type={clinicSignUpField.name.includes("password") ? "password" : "text"}
+                                        required={clinicSignUpField.required}
+                                        type={clinicSignUpField.type}
+                                        autoComplete={clinicSignUpField.autoComplete}
                                         placeholder={clinicSignUpField.placeholder}
                                         {...field}
                                     />

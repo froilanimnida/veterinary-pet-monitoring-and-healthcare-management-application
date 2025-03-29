@@ -21,7 +21,7 @@ model appointments {
   created_at       DateTime?      @default(now()) @db.Timestamptz(6)
   pets             pets?          @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
   veterinarians    veterinarians? @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
-  clinics          clinics?       @relation(fields: [clinic_id], references: [clinic_id], onDelete: NoAction, onUpdate: NoAction) // New relation
+  clinics          clinics?       @relation(fields: [clinic_id], references: [clinic_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model educational_content {
@@ -126,7 +126,7 @@ model pets {
   pet_uuid           String              @default(dbgenerated("uuid_generate_v4()")) @db.Uuid @unique
   name               String              @db.VarChar(100)
   species            species_type
-  breed              breed_type?
+  breed              breed_type
   date_of_birth      DateTime           @db.Date
   weight_kg          Decimal            @db.Decimal(5, 2)
   sex                pet_sex_type
@@ -207,9 +207,9 @@ model vaccinations {
 model veterinarians {
   user_id              Int?
   vet_id               Int                        @id @default(autoincrement())
-  vet_uuid             String?                    @default(dbgenerated("uuid_generate_v4()")) @db.Uuid @unique
+  vet_uuid             String                    @default(dbgenerated("uuid_generate_v4()")) @db.Uuid @unique
   license_number       String                     @unique @db.VarChar(50)
-  specialization       veterinary_specialization?
+  specialization       veterinary_specialization
   created_at           DateTime?                  @default(now()) @db.Timestamptz(6)
   appointments         appointments[]
   clinic_veterinarians clinic_veterinarians[]
@@ -254,7 +254,7 @@ model clinics {
 model clinic_hours {
   id             Int       @id @default(autoincrement())
   clinic_id      Int
-  day_of_week    Int       // 0-6 for Sunday-Saturday
+  day_of_week    Int
   opens_at       DateTime  @db.Time
   closes_at      DateTime  @db.Time
   is_closed      Boolean   @default(false)
@@ -266,7 +266,7 @@ model vet_availability {
   availability_id   Int          @id @default(autoincrement())
   vet_id           Int
   clinic_id        Int
-  day_of_week      Int          // 0-6 for Sunday-Saturday
+  day_of_week      Int
   start_time       DateTime     @db.Time
   end_time         DateTime     @db.Time
   is_available     Boolean      @default(true)
@@ -405,7 +405,6 @@ enum appointment_type {
   neurology
   oncology
   hospice_care
-  telemedicine
 }
 
 enum appointment_status {

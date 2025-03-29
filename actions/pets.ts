@@ -1,18 +1,19 @@
 "use server";
 import { auth } from "@/auth";
 import type { PetSchema } from "@/schemas/pet-definition";
-import { PrismaClient, type breed_type, type pet_sex_type, type species_type } from "@prisma/client";
+import { type breed_type, type pet_sex_type, type pets, type species_type } from "@prisma/client";
 import { z } from "zod";
 import { getUserId } from "./user";
+import { type ActionResponse } from "@/types/server-action-response";
+import { prisma } from "@/lib/prisma";
 
-const addPet = async (values: z.infer<typeof PetSchema>) => {
-    const session = await auth();
-    if (!session || !session.user || !session.user.email) {
-        throw new Error("User not found");
-    }
-    const user_id = await getUserId(session?.user?.email);
+const addPet = async (values: z.infer<typeof PetSchema>): Promise<ActionResponse<{ pet: pets }>> => {
     try {
-        const prisma = new PrismaClient();
+        const session = await auth();
+        if (!session || !session.user || !session.user.email) {
+            throw Promise.reject("User not found");
+        }
+        const user_id = await getUserId(session?.user?.email);
         const pet = await prisma.pets.create({
             data: {
                 name: values.name,
@@ -29,72 +30,83 @@ const addPet = async (values: z.infer<typeof PetSchema>) => {
         if (!pet) {
             throw await Promise.reject("Failed to add pet");
         }
-        return { success: true };
+        return { success: true, data: { pet } };
     } catch (error) {
-        if (error instanceof Error) {
-            throw new Error(error.message);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
+};
+
+const getPet = async (pet_uuid: string): Promise<ActionResponse<{ pet: pets }>> => {
+    try {
+        const pet = await prisma.pets.findUnique({
+            where: {
+                pet_uuid: pet_uuid,
+            },
+        });
+        if (!pet) return { success: false, error: "Pet not found" };
+        return { success: true, data: { pet: pet } };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
+};
+
+const updatePet = async (
+    values: z.infer<typeof PetSchema>,
+    pet_id: number,
+): Promise<ActionResponse<{ pet_uuid: string }>> => {
+    try {
+        const pet = await prisma.pets.update({
+            where: {
+                pet_id: pet_id,
+            },
+            data: {
+                name: values.name,
+                breed: values.breed as breed_type,
+                sex: values.sex as pet_sex_type,
+                species: values.species as species_type,
+                weight_kg: values.weight_kg,
+                medical_history: values.medical_history,
+                vaccination_status: values.vaccination_status,
+            },
+        });
+        if (!pet) return { success: false, error: "Failed to update pet" };
+        return { success: true, data: { pet_uuid: pet.pet_uuid } };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
+};
+
+const getPets = async (): Promise<ActionResponse<{ pets: pets[] }>> => {
+    try {
+        const session = await auth();
+        if (!session || !session.user || !session.user.email) {
+            throw new Error("User not found");
         }
-        if (typeof error === "string") {
-            throw new Error(error);
+        const userId = await getUserId(session?.user?.email);
+        const pets = await prisma.pets.findMany({
+            where: {
+                user_id: userId,
+            },
+        });
+        if (!pets) {
+            throw new Error("No pets found");
         }
-        throw new Error("An unexpected error occurred");
+        return { success: true, data: { pets } };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
     }
-};
-
-const getPet = async (pet_uuid: string) => {
-    const prisma = new PrismaClient();
-    const pet = await prisma.pets.findUnique({
-        where: {
-            pet_uuid: pet_uuid,
-        },
-    });
-    if (!pet) {
-        throw new Error("Pet not found");
-    }
-    return pet;
-};
-
-const updatePet = async (values: z.infer<typeof PetSchema>, pet_id: number) => {
-    const prisma = new PrismaClient();
-    const pet = await prisma.pets.update({
-        where: {
-            pet_id: pet_id,
-        },
-        data: {
-            name: values.name,
-            breed: values.breed as breed_type,
-            sex: values.sex as pet_sex_type,
-            species: values.species as species_type,
-            weight_kg: values.weight_kg,
-            medical_history: values.medical_history,
-            vaccination_status: values.vaccination_status,
-        },
-    });
-    if (!pet) {
-        throw new Error("Failed to update pet");
-    }
-    return pet;
-};
-
-const getPets = async () => {
-    const prisma = new PrismaClient();
-    const session = await auth();
-    if (!session || !session.user || !session.user.email) {
-        throw new Error("User not found");
-    }
-    const userId = await getUserId(session?.user?.email);
-    const pets = await prisma.pets.findMany({
-        where: {
-            user_id: userId,
-        },
-    });
-    if (!pets) {
-        throw new Error("No pets found");
-    }
-    return pets.map((pet) => ({
-        ...pet,
-        weight_kg: String(pet.weight_kg),
-    }));
 };
 
 export { addPet, getPet, updatePet, getPets };

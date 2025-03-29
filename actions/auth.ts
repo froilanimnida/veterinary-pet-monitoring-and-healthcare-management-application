@@ -1,122 +1,114 @@
-'use server';
-import { PrismaClient } from '@prisma/client';
-import { SignUpSchema } from '@/schemas/auth-definitions';
-import type { z } from 'zod';
-import { UserRoleType } from '@/types/constants';
-import { signOut } from 'next-auth/react';
-import { NewClinicAccountSchema } from '@/schemas/clinic-signup-definition';
-import { hashPassword, verifyPassword } from '@/lib/functions/security/password-check';
+"use server";
+import { prisma } from "@/lib/prisma";
+import { SignUpSchema } from "@/schemas/auth-definitions";
+import type { z } from "zod";
+import { role_type } from "@prisma/client";
+import { signOut } from "next-auth/react";
+import { NewClinicAccountSchema } from "@/schemas/clinic-signup-definition";
+import { hashPassword, verifyPassword } from "@/lib/functions/security/password-check";
+import type { ActionResponse } from "@/types/server-action-response";
 
-export const createAccount = async (values: z.infer<typeof SignUpSchema>) => {
-	const formData = await SignUpSchema.parseAsync(values);
-	const prisma = new PrismaClient();
-	const user = await prisma.users.findFirst({
-		where: {
-			OR: [
-				{ email: values.email },
-				{ phone_number: values.phone_number },
-			],
-		},
-	});
-	if (user !== null) {
-		return Promise.reject('User already exists');
-	}
-	const hashedPassword = await hashPassword(formData.password);
-	const result = await prisma.users.create({
-		data: {
-			email: formData.email,
-			password_hash: hashedPassword,
-			first_name: formData.first_name,
-			last_name: formData.last_name,
-			phone_number: formData.phone_number,
-			role: UserRoleType.User,
-		},
-	});
-	if (result.user_id === null) {
-		return Promise.reject('Failed to create account');
-	}
-	return Promise.resolve(result);
+const createAccount = async (values: z.infer<typeof SignUpSchema>): Promise<ActionResponse<{ user_uuid: string }>> => {
+    try {
+        const formData = SignUpSchema.safeParse(values);
+        if (!formData.success) {
+            return { success: false, error: "Invalid input" };
+        }
+        const user = await prisma.users.findFirst({
+            where: {
+                OR: [{ email: values.email }, { phone_number: values.phone_number }],
+            },
+        });
+        if (user !== null) return { success: false, error: "email_or_phone_number_already_exists" };
+        const result = await prisma.users.create({
+            data: {
+                email: formData.data.email,
+                password_hash: await hashPassword(formData.data.password),
+                first_name: formData.data.first_name,
+                last_name: formData.data.last_name,
+                phone_number: formData.data.phone_number,
+                role: role_type.user,
+            },
+        });
+        if (result.user_id === null) return { success: false, error: "Failed to create account" };
+        return { success: true, data: { user_uuid: result.user_uuid } };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
 };
 
-export const logout = async () => {
-	const prisma = new PrismaClient();
-	await prisma.$disconnect();
-	await signOut({callbackUrl: '/auth/login'});
+const logout = async () => await signOut({ callbackUrl: "/auth/login" });
+
+const createClinicAccount = async (
+    values: z.infer<typeof NewClinicAccountSchema>,
+): Promise<ActionResponse<{ user_uuid: string }>> => {
+    try {
+        const formData = NewClinicAccountSchema.safeParse(values);
+        if (!formData.success) return { success: false, error: "Invalid input" };
+        const user = await prisma.users.findFirst({
+            where: {
+                OR: [{ email: values.email }, { phone_number: values.phone_number }],
+            },
+        });
+        if (user !== null) return { success: false, error: "email_or_phone_number_already_exists" };
+        const result = await prisma.users.create({
+            data: {
+                email: formData.data.email,
+                password_hash: await hashPassword(values.password),
+                first_name: formData.data.first_name,
+                last_name: formData.data.last_name,
+                phone_number: formData.data.phone_number,
+                role: role_type.client,
+            },
+        });
+        if (result.user_id === null) return { success: false, error: "Failed to create account" };
+
+        const clinicResult = await prisma.clinics.create({
+            data: {
+                name: formData.data.name,
+                address: formData.data.address,
+                city: formData.data.city,
+                state: formData.data.state,
+                postal_code: formData.data.postal_code,
+                phone_number: formData.data.phone_number,
+                emergency_services: formData.data.emergency_services,
+                user_id: result.user_id,
+            },
+        });
+        if (clinicResult.clinic_id === null) {
+            return { success: false, error: "Failed to create clinic account" };
+        }
+        return { success: true, data: { user_uuid: result.user_uuid } };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
 };
 
-export const createClinicAccount = async (
-	values: z.infer<typeof NewClinicAccountSchema>,
-) => {
-	try {
-		const formData = await NewClinicAccountSchema.parseAsync(values);
-		const prisma = new PrismaClient();
-		const user = await prisma.users.findFirst({
-			where: {
-				OR: [
-					{ email: values.email },
-					{ phone_number: values.phone_number },
-				],
-			},
-		});
-		if (user !== null) {
-			return Promise.reject('email_or_phone_number_already_exists');
-		}
-		const hashedPassword = await hashPassword(values.password);
-		const result = await prisma.users.create({
-			data: {
-				email: formData.email,
-				password_hash: hashedPassword,
-				first_name: formData.first_name,
-				last_name: formData.last_name,
-				phone_number: formData.phone_number,
-				role: UserRoleType.Client,
-			},
-		});
-		if (result.user_id === null) {
-			return Promise.reject('Failed to create account');
-		}
-		const clinicResult = await prisma.clinics.create({
-			data: {
-				name: formData.name,
-				address: formData.address,
-				city: formData.city,
-				state: formData.state,
-				postal_code: formData.postal_code,
-				phone_number: formData.phone_number,
-				emergency_services: formData.emergency_services,
-				user_id: result.user_id,
-			},
-		});
-		if (clinicResult.clinic_id === null) {
-			return Promise.reject('Failed to create clinic account');
-		}
-		return { success: true };
-	} catch (error) {
-		if (error instanceof Error) {
-			throw new Error(error.message);
-		}
-		if (typeof error === 'string') {
-			throw new Error(error);
-		}
-		throw new Error('An unexpected error occurred');
-	}
-};
-
-export const loginAccount = async (email: string, password: string) => {
-	const prisma = new PrismaClient();
-	const user = await prisma.users.findFirst({
-		where: {
-			email: email,
-		},
-	});
-	if (user === null) {
-		return Promise.reject('User not found');
-	}
-	if (!(await verifyPassword(password, user.password_hash))) {
-		return Promise.reject('Invalid password');
-	}
-	return Promise.resolve(user);
+const loginAccount = async (email: string, password: string): Promise<ActionResponse<{ user_uuid: string }>> => {
+    try {
+        const user = await prisma.users.findFirst({
+            where: {
+                email: email,
+            },
+        });
+        if (user === null) return { success: false, error: "User not found" };
+        if (!(await verifyPassword(password, user.password_hash))) return { success: false, error: "Invalid password" };
+        return { success: true, data: { user_uuid: user.user_uuid } };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
 };
 
 // export const createVeterinarianAccount
 // export const verifyEmail
+
+export { loginAccount, createAccount, createClinicAccount, logout };
