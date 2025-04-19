@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 const AppointmentsHistory = async () => {
     const data = await getUserAppointments();
-    const appointments = data.success ? data.data?.appointments ?? [] : [];
+    const appointments = data.success ? (data.data?.appointments ?? []) : [];
     if (!appointments || appointments.length === 0) {
         return (
             <div className="text-center py-10 w-full mx-auto">

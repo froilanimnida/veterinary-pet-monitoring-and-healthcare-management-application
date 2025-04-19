@@ -224,8 +224,47 @@ const getPets = async (): Promise<ActionResponse<{ pets: Pets[] }>> => {
         const session = await getServerSession(authOptions);
         if (!session || !session.user || !session.user.id) redirect("/signin");
         const petsData = await prisma.pets.findMany({
-            where: { user_id: Number(session.user.id) },
-            orderBy: { date_of_birth: "desc" },
+            where: {
+                user_id: Number(session.user.id),
+                deleted: false,
+            },
+            orderBy: { created_at: "desc" },
+            include: {
+                vaccinations: {
+                    where: {
+                        next_due_date: {
+                            gte: new Date(),
+                        },
+                    },
+                    orderBy: {
+                        next_due_date: "asc",
+                    },
+                    take: 5,
+                },
+                prescriptions: {
+                    where: {
+                        OR: [
+                            {
+                                end_date: {
+                                    gte: new Date(),
+                                },
+                            },
+                            {
+                                refills_remaining: {
+                                    gt: 0,
+                                },
+                            },
+                        ],
+                    },
+                    orderBy: {
+                        end_date: "asc",
+                    },
+                    include: {
+                        medications: true,
+                    },
+                    take: 5,
+                },
+            },
         });
 
         if (!petsData || petsData.length === 0) return { success: true, data: { pets: [] } };

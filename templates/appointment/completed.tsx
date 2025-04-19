@@ -119,8 +119,8 @@ export default function AppointmentCompleted({
                         )}
 
                         <Text style={styles.questionsText}>
-                            If you have any questions about today's appointment or your pet's care plan, please contact
-                            us at {clinicPhone}.
+                            If you have any questions about today&apos;s appointment or your pet&apos;s care plan,
+                            please contact us at {clinicPhone}.
                         </Text>
 
                         <Hr style={styles.divider} />
@@ -133,7 +133,7 @@ export default function AppointmentCompleted({
                     </Section>
 
                     <Text style={styles.footer}>
-                        Thank you for choosing PawsitiveHealth for your pet's healthcare needs.
+                        Thank you for choosing PawsitiveHealth for your pet&apos;s healthcare needs.
                     </Text>
                 </Container>
             </Body>

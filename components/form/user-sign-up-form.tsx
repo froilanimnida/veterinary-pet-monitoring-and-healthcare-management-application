@@ -86,7 +86,7 @@ function UserSignUpForm() {
         resolver: zodResolver(SignUpSchema),
         shouldFocusError: true,
         progressive: true,
-        mode: "onBlur",
+        mode: "onChange",
     });
 
     const onSubmit = async (values: SignUpType) => {
@@ -124,20 +124,21 @@ function UserSignUpForm() {
                                 | "phone_number"
                         }
                         render={({ field, fieldState }) => (
-                            <FormControl>
-                                <FormItem>
-                                    <FormLabel>{signUpFormField.label}</FormLabel>
+                            <FormItem>
+                                <FormLabel htmlFor={field.name}>{signUpFormField.label}</FormLabel>
+                                <FormControl>
                                     <Input
+                                        id={field.name}
                                         required={signUpFormField.required}
                                         type={signUpFormField.type}
                                         autoComplete={signUpFormField.autoComplete}
                                         placeholder={signUpFormField.placeholder}
                                         {...field}
                                     />
-                                    <FormDescription>{signUpFormField.description}</FormDescription>
-                                    <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
-                                </FormItem>
-                            </FormControl>
+                                </FormControl>
+                                <FormDescription>{signUpFormField.description}</FormDescription>
+                                <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
+                            </FormItem>
                         )}
                     />
                 ))}

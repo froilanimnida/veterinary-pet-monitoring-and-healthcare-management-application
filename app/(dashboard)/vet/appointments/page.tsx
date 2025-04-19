@@ -108,9 +108,9 @@ const AppointmentCard = ({ appointment }: { appointment: VetAppointmentWithRelat
     </Card>
 );
 
-const Appointments = async () => {
+export const Appointments = async () => {
     const appointmentsResponse = await getVeterinarianAppointments();
-    const appointments = appointmentsResponse.success ? appointmentsResponse.data?.appointments ?? [] : [];
+    const appointments = appointmentsResponse.success ? (appointmentsResponse.data?.appointments ?? []) : [];
 
     if (!appointments || appointments.length === 0) {
         return (
@@ -199,7 +199,7 @@ const Appointments = async () => {
                                     .sort(
                                         (a, b) =>
                                             new Date(a.appointment_date).getTime() -
-                                            new Date(b.appointment_date).getTime()
+                                            new Date(b.appointment_date).getTime(),
                                     )
                                     .map((appointment) => (
                                         <AppointmentCard key={appointment.appointment_id} appointment={appointment} />
@@ -214,7 +214,7 @@ const Appointments = async () => {
                         timeGroups.today
                             .sort(
                                 (a, b) =>
-                                    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+                                    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime(),
                             )
                             .map((appointment) => (
                                 <AppointmentCard key={appointment.appointment_id} appointment={appointment} />
@@ -232,7 +232,7 @@ const Appointments = async () => {
                         statusGroups.requested
                             .sort(
                                 (a, b) =>
-                                    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+                                    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime(),
                             )
                             .map((appointment) => (
                                 <AppointmentCard key={appointment.appointment_id} appointment={appointment} />
@@ -250,7 +250,7 @@ const Appointments = async () => {
                         statusGroups.requested
                             .sort(
                                 (a, b) =>
-                                    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+                                    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime(),
                             )
                             .map((appointment) => (
                                 <AppointmentCard key={appointment.appointment_id} appointment={appointment} />
@@ -279,7 +279,7 @@ const Appointments = async () => {
                                     .sort(
                                         (a, b) =>
                                             new Date(a.appointment_date).getTime() -
-                                            new Date(b.appointment_date).getTime()
+                                            new Date(b.appointment_date).getTime(),
                                     )
                                     .map((appointment) => (
                                         <AppointmentCard key={appointment.appointment_id} appointment={appointment} />

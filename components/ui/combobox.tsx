@@ -56,7 +56,7 @@ export function Combobox({
             onValueChange?.(newValue);
             setOpen(false);
         },
-        [selectedValue, onValueChange, value]
+        [selectedValue, onValueChange, value],
     );
 
     return (
@@ -85,7 +85,7 @@ export function Combobox({
                                     <Check
                                         className={cn(
                                             "mr-2 h-4 w-4",
-                                            selectedValue === option.value ? "opacity-100" : "opacity-0"
+                                            selectedValue === option.value ? "opacity-100" : "opacity-0",
                                         )}
                                     />
                                     {option.label}

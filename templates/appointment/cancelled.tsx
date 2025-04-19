@@ -79,8 +79,8 @@ export default function AppointmentCancelled({
                         )}
 
                         <Text style={styles.reschedulingText}>
-                            If you&apos;d like to reschedule this appointment, please visit our website or call the clinic
-                            directly at {clinicPhone}.
+                            If you&apos;d like to reschedule this appointment, please visit our website or call the
+                            clinic directly at {clinicPhone}.
                         </Text>
 
                         <Hr style={styles.divider} />

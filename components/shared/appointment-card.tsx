@@ -1,11 +1,8 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, User, Stethoscope, XCircle, CheckCircle, Check } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { toTitleCase } from "@/lib/functions/text/title-case";
-import { formatDecimal } from "@/lib/functions/format-decimal";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui";
+import { toTitleCase, formatDecimal } from "@/lib";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button, CardFooter } from "@/components/ui";
 import { CancelAppointmentButton } from "./cancel-appointment-button";
 import { AppointmentDetailsResponse } from "@/types/actions/appointments";
 import { AcceptAppointmentButton } from "./accept-appointment-button";
@@ -19,18 +16,20 @@ export const statusColors: Record<string, string> = {
     completed: "bg-purple-100 text-purple-800 border-purple-200",
     cancelled: "bg-red-100 text-red-800 border-red-200",
     pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    checked_in: "bg-teal-100 text-teal-800 border-teal-200",
+    no_show: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
 export function AppointmentCard({
     appointment,
     viewerType,
     additionalActions,
-    showFooter = true,
+    showAdditionalAction = true,
 }: {
     appointment: AppointmentDetailsResponse;
     viewerType: "user" | "vet" | "clinic";
     additionalActions?: React.ReactNode;
-    showFooter?: boolean;
+    showAdditionalAction?: boolean;
 }) {
     const appointmentDate = new Date(appointment.appointment_date);
     const dateString = format(appointmentDate, "EEEE, MMMM d, yyyy");
@@ -45,7 +44,7 @@ export function AppointmentCard({
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <CardTitle className="text-2xl">Appointment Details</CardTitle>
                     <Badge className={cn("px-3 py-1 text-sm", statusColors[appointment.status] || "bg-gray-100")}>
-                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                        {toTitleCase(appointment.status)}
                     </Badge>
                 </div>
                 <CardDescription>
@@ -169,92 +168,94 @@ export function AppointmentCard({
                     </div>
                 </div>
             </CardContent>
+            <CardFooter className="flex items-center justify-between pt-0">
+                {showAdditionalAction && (
+                    <aside className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                            {appointment.status !== "cancelled" && (
+                                <ConfirmationDialog
+                                    trigger={
+                                        <Button variant="destructive">
+                                            <XCircle className="mr-2 h-4 w-4" />
+                                            Cancel Appointment
+                                        </Button>
+                                    }
+                                    title="Are you absolutely sure?"
+                                    description="This action cannot be undone. This will permanently mark this appointment as cancelled."
+                                    actionButtons={
+                                        <CancelAppointmentButton appointmentUuid={appointment.appointment_uuid} />
+                                    }
+                                    size="md"
+                                />
+                            )}
+                            {appointment.status === "confirmed" && viewerType === "vet" && (
+                                <ConfirmationDialog
+                                    trigger={
+                                        <Button variant="default">
+                                            <Check className="mr-2 h-4 w-4" />
+                                            Check-in
+                                        </Button>
+                                    }
+                                    title="Are you absolutely sure?"
+                                    description="Please make sure that the user is inside the premise and is ready for the appointment."
+                                    actionButtons={<CheckInButton appointmentUuid={appointment.appointment_uuid} />}
+                                    size="md"
+                                />
+                            )}
+                            {appointment.status === "requested" &&
+                                (viewerType === "vet" || viewerType === "clinic") && (
+                                    <ConfirmationDialog
+                                        trigger={
+                                            <Button>
+                                                <CheckCircle className="mr-2 h-4 w-4" />
+                                                Accept Appointment
+                                            </Button>
+                                        }
+                                        title="Are you absolutely sure?"
+                                        description="This action cannot be undone. This will permanently mark this appointment as accepted. We'll send a confirmation to the user."
+                                        actionButtons={
+                                            <AcceptAppointmentButton appointmentUuid={appointment.appointment_uuid} />
+                                        }
+                                        size="md"
+                                    />
+                                )}
+                            {appointment.status === "checked_in" && viewerType === "vet" && (
+                                <ConfirmationDialog
+                                    trigger={
+                                        <Button>
+                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                            Finalize Appointment
+                                        </Button>
+                                    }
+                                    title="Are you absolutely sure?"
+                                    description="This action cannot be undone. This will permanently mark this appointment as completed. We'll send a confirmation to the user."
+                                    actionButtons={
+                                        <AcceptAppointmentButton appointmentUuid={appointment.appointment_uuid} />
+                                    }
+                                    size="md"
+                                />
+                            )}
+                            {appointment.status !== "cancelled" &&
+                                appointment.status !== "completed" &&
+                                appointment.status !== "checked_in" && (
+                                    <RescheduleAppointmentDialog
+                                        appointmentUuid={appointment.appointment_uuid}
+                                        vetId={appointment.veterinarians?.vet_id || 0}
+                                        currentDate={appointmentDate}
+                                        currentNotes={appointment.notes || ""}
+                                    >
+                                        <Button variant="outline">
+                                            <Calendar className="mr-2 h-4 w-4" />
+                                            Reschedule
+                                        </Button>
+                                    </RescheduleAppointmentDialog>
+                                )}
+                        </div>
 
-            {showFooter && (
-                <CardFooter className="flex justify-between border-t p-6 bg-gray-50">
-                    <div className="flex gap-2">
-                        {appointment.status !== "cancelled" && (
-                            <ConfirmationDialog
-                                trigger={
-                                    <Button variant="destructive">
-                                        <XCircle className="mr-2 h-4 w-4" />
-                                        Cancel Appointment
-                                    </Button>
-                                }
-                                title="Are you absolutely sure?"
-                                description="This action cannot be undone. This will permanently mark this appointment as cancelled."
-                                actionButtons={
-                                    <CancelAppointmentButton appointmentUuid={appointment.appointment_uuid} />
-                                }
-                                size="md"
-                            />
-                        )}
-                        {appointment.status === "confirmed" && viewerType === "vet" && (
-                            <ConfirmationDialog
-                                trigger={
-                                    <Button variant="default">
-                                        <Check className="mr-2 h-4 w-4" />
-                                        Check-in
-                                    </Button>
-                                }
-                                title="Are you absolutely sure?"
-                                description="Please make sure that the user is inside the premise and is ready for the appointment."
-                                actionButtons={<CheckInButton appointmentUuid={appointment.appointment_uuid} />}
-                                size="md"
-                            />
-                        )}
-                        {appointment.status === "requested" && (viewerType === "vet" || viewerType === "clinic") && (
-                            <ConfirmationDialog
-                                trigger={
-                                    <Button>
-                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                        Accept Appointment
-                                    </Button>
-                                }
-                                title="Are you absolutely sure?"
-                                description="This action cannot be undone. This will permanently mark this appointment as accepted. We'll send a confirmation to the user."
-                                actionButtons={
-                                    <AcceptAppointmentButton appointmentUuid={appointment.appointment_uuid} />
-                                }
-                                size="md"
-                            />
-                        )}
-
-                        {appointment.status === "checked_in" && viewerType === "vet" && (
-                            <ConfirmationDialog
-                                trigger={
-                                    <Button>
-                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                        Finalize Appointment
-                                    </Button>
-                                }
-                                title="Are you absolutely sure?"
-                                description="This action cannot be undone. This will permanently mark this appointment as completed. We'll send a confirmation to the user."
-                                actionButtons={
-                                    <AcceptAppointmentButton appointmentUuid={appointment.appointment_uuid} />
-                                }
-                                size="md"
-                            />
-                        )}
-
-                        {appointment.status !== "cancelled" && appointment.status !== "completed" && (
-                            <RescheduleAppointmentDialog
-                                appointmentUuid={appointment.appointment_uuid}
-                                vetId={appointment.veterinarians?.users?.vet_id || 0}
-                                currentDate={appointmentDate}
-                                currentNotes={appointment.notes || ""}
-                            >
-                                <Button variant="outline">
-                                    <Calendar className="mr-2 h-4 w-4" />
-                                    Reschedule
-                                </Button>
-                            </RescheduleAppointmentDialog>
-                        )}
-                    </div>
-
-                    {additionalActions && <div className="flex gap-2">{additionalActions}</div>}
-                </CardFooter>
-            )}
+                        {additionalActions && <div className="flex gap-2">{additionalActions}</div>}
+                    </aside>
+                )}
+            </CardFooter>
         </Card>
     );
 }

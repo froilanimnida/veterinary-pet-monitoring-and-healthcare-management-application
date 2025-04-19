@@ -3,4 +3,4 @@ export const commonFormProperty = {
     shouldFocusError: true,
     mode: "onBlur",
     revalidateMode: "onChange",
-}
+};

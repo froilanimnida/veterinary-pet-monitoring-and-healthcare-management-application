@@ -23,19 +23,26 @@ export {
     getVeterinarianAppointments,
     changeAppointmentStatus,
     rescheduleAppointment,
+    getAppointmentHistoricalData,
+    getAppointmentRecordedServices,
 } from "./appointment";
 export { getUserId, updateCalendarIntegration, updateUserProfile } from "./user";
 export { getVeterinaryAvailability } from "./veterinarian-availability";
-export { createVaccination, getPetVaccinations } from "./vaccination";
+export { createVaccination, getPetVaccinations, deleteVaccination, getVaccination } from "./vaccination";
 //export {} from "./medical-records";
 //export {} from "./health-monitoring";
-export { addHealthcareProcedure, getHealthcareProcedure, getHealthcareProcedures } from "./healthcare-procedures";
+export {
+    addHealthcareProcedure,
+    getHealthcareProcedure,
+    getHealthcareProcedures,
+    deleteHealthcareProcedure,
+} from "./healthcare-procedures";
 export { getClinicSchedule } from "./clinic-schedule";
 export { createMedication, getMedicationsList } from "./medications";
 export { sendEmail, sendSimpleEmail } from "./send-email";
 export { getEducationalContent, getEducationalContentByUuid } from "./educational-content";
 export { getUserNotifications, getUserNotification, markNotificationAsRead } from "./notification";
-export { addPrescription, viewPrescription } from "./prescription";
+export { addPrescription, viewPrescription, deletePrescription } from "./prescription";
 export {
     addToGoogleCalendar,
     deleteGoogleCalendarEvent,
@@ -49,3 +56,10 @@ export {
     getCalendarSyncPreference,
     getThemePreference,
 } from "./preference";
+export {
+    getDashboardHealthcare,
+    getPetHistoricalHealthcareData,
+    getDashboardHealthcareData,
+    getUpcomingPrescriptions,
+    getUpcomingVaccinations,
+} from "./dashboard-healthcare";

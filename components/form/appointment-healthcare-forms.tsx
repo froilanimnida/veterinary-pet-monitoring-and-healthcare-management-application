@@ -2,18 +2,33 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import PrescriptionForm from "../form/prescription-form";
 import { useState } from "react";
-import PetVaccinationForm from "./pet-vaccination-form";
-import PetProcedureForm from "./pet-healthcare-form";
-//import type { medications } from "@prisma/client";
+import PetProcedureForm from "./pet-healthcare-procedure-form";
+import { VaccinationForm } from "./veccination-form";
+import type { medications } from "@prisma/client";
 
 interface AppointmentHealthcareFormsProps {
     petId: number;
-    appointmentUuid: string;
-    //medicationLists: medications[];
+    petUuid: string;
+    appointmentUuid?: string;
+    appointmentId?: number;
+    vetId?: number;
+    isVetView?: boolean;
+    isCheckedIn?: boolean;
+    medicationList: medications[] | [];
 }
 
-export function AppointmentHealthcareForms({ petId, appointmentUuid }: AppointmentHealthcareFormsProps) {
+export function AppointmentHealthcareForms({
+    petId,
+    petUuid,
+    appointmentUuid,
+    appointmentId,
+    vetId,
+    isVetView = false,
+    isCheckedIn = true,
+    medicationList,
+}: AppointmentHealthcareFormsProps) {
     const [activeTab, setActiveTab] = useState("vaccination");
+
     return (
         <div className="mt-6 space-y-4">
             <Tabs defaultValue="vaccination" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -27,13 +42,18 @@ export function AppointmentHealthcareForms({ petId, appointmentUuid }: Appointme
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold">Record Vaccination</h3>
                         <p className="text-sm text-muted-foreground">
-                            Record vaccines administered during this appointment
+                            {isVetView
+                                ? "Record vaccines administered during this appointment"
+                                : "Record historical vaccination information for this pet"}
                         </p>
                     </div>
-                    <PetVaccinationForm
-                        //petUuid={petUuid}
+
+                    <VaccinationForm
                         petId={petId}
-                        petUuid={appointmentUuid}
+                        petUuid={petUuid}
+                        appointmentId={appointmentId}
+                        appointmentUuid={appointmentUuid}
+                        isUserView={false}
                     />
                 </TabsContent>
 
@@ -41,21 +61,37 @@ export function AppointmentHealthcareForms({ petId, appointmentUuid }: Appointme
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold">Record Healthcare Procedure</h3>
                         <p className="text-sm text-muted-foreground">
-                            Document medical procedures performed during this appointment
+                            {isVetView
+                                ? "Record procedures performed during this appointment"
+                                : "Record historical procedure information for this pet"}
                         </p>
                     </div>
+
                     <PetProcedureForm
                         petId={petId}
-                        //appointmentUuid={appointmentUuid}
+                        petUuid={petUuid}
+                        appointmentId={appointmentId}
+                        appointmentUuid={appointmentUuid}
+                        isUserView={!isVetView}
+                        vetId={vetId}
                     />
                 </TabsContent>
 
                 <TabsContent value="prescription" className="p-4 border rounded-md bg-card">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold">Issue Prescription</h3>
-                        <p className="text-sm text-muted-foreground">Create prescriptions for medications</p>
+                        <p className="text-sm text-muted-foreground">Create a new prescription for this pet</p>
                     </div>
-                    <PrescriptionForm petId={petId} appointmentUuid={appointmentUuid} />
+
+                    <PrescriptionForm
+                        medicationList={medicationList}
+                        petId={petId}
+                        petUuid={petUuid}
+                        appointmentId={appointmentId}
+                        appointmentUuid={appointmentUuid}
+                        vetId={vetId}
+                        isCheckIn={isCheckedIn}
+                    />
                 </TabsContent>
             </Tabs>
         </div>

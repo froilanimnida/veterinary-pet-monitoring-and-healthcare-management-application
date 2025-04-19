@@ -8,9 +8,9 @@ import {
     FormField,
     FormLabel,
     FormMessage,
+    FormDescription,
     Input,
     Button,
-    FormDescription,
     Select,
     SelectContent,
     SelectItem,
@@ -31,19 +31,25 @@ import { procedure_type } from "@prisma/client";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib";
-import { useRouter } from "next/navigation";
 
 interface PetProcedureFormProps {
     petUuid?: string;
-    petId?: number;
-    onSuccess?: () => void;
-    onCancel?: () => void;
+    petId: number;
+    appointmentId?: number;
+    appointmentUuid?: string;
+    isUserView?: boolean; // Flag to determine if it's user historical entry or vet current entry
+    vetId?: number; // Optional vet ID for when a vet is performing the procedure
 }
 
-const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureFormProps) => {
+const PetProcedureForm = ({
+    petUuid,
+    petId,
+    appointmentId,
+    appointmentUuid,
+    isUserView = false,
+    vetId,
+}: PetProcedureFormProps) => {
     const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
-
     const petProcedureForm = useForm({
         resolver: zodResolver(ProcedureSchema),
         reValidateMode: "onChange",
@@ -52,7 +58,11 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
         defaultValues: {
             pet_uuid: petUuid,
             pet_id: petId,
-            procedure_type: "deworming" as procedure_type,
+            appointment_id: appointmentId,
+            appointment_uuid: appointmentUuid,
+            administered_by: vetId,
+            external_provider: "",
+            procedure_type: procedure_type.deworming,
             procedure_date: new Date(),
             next_due_date: undefined,
             product_used: "",
@@ -63,28 +73,32 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
 
     const onSubmit = async (values: ProcedureType) => {
         setIsLoading(true);
-
-        try {
-            const result = await addHealthcareProcedure(values);
-
-            if (result.success) {
-                toast.success("Healthcare procedure added successfully");
-                petProcedureForm.reset();
-
-                if (onSuccess) {
-                    onSuccess();
-                } else {
-                    router.refresh();
-                }
-            } else {
-                toast.error(result.error || "Failed to add healthcare procedure");
-            }
-        } catch (error) {
-            console.error("Error adding healthcare procedure:", error);
-            toast.error("An unexpected error occurred");
-        } finally {
+        toast.loading("Saving healthcare procedure...");
+        const result = await addHealthcareProcedure(values);
+        if (result === undefined) {
+            toast.dismiss();
+            toast.success("Healthcare procedure added successfully");
             setIsLoading(false);
+            petProcedureForm.reset({
+                ...petProcedureForm.getValues(),
+                procedure_type: procedure_type.deworming,
+                procedure_date: new Date(),
+                next_due_date: undefined,
+                product_used: "",
+                dosage: "",
+                notes: "",
+            });
+            return;
         }
+        if (result && !result.success && result.error) {
+            toast.dismiss();
+            toast.error(result.error || "Failed to add healthcare procedure");
+            setIsLoading(false);
+            return;
+        }
+        toast.dismiss();
+        toast.error("Failed to add healthcare procedure");
+        setIsLoading(false);
     };
 
     return (
@@ -112,7 +126,7 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
                                     </SelectContent>
                                 </Select>
                                 <FormDescription>The type of healthcare procedure performed</FormDescription>
-                                <FormMessage>{fieldState.error?.message}</FormMessage>
+                                <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
                             </FormItem>
                         )}
                     />
@@ -133,6 +147,7 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
                                                     !field.value && "text-muted-foreground",
                                                 )}
                                                 disabled={isLoading}
+                                                type="button"
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {field.value ? format(field.value, "PPP") : <span>Select date</span>}
@@ -144,13 +159,17 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
                                             mode="single"
                                             selected={field.value}
                                             onSelect={field.onChange}
-                                            disabled={(date) => date > new Date()}
+                                            disabled={isUserView ? undefined : (date) => date > new Date()}
                                             initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>
-                                <FormDescription>The date when the procedure was performed</FormDescription>
-                                <FormMessage>{fieldState.error?.message}</FormMessage>
+                                <FormDescription>
+                                    {isUserView
+                                        ? "When this procedure was performed"
+                                        : "The date this procedure is being performed"}
+                                </FormDescription>
+                                <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
                             </FormItem>
                         )}
                     />
@@ -171,6 +190,7 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
                                                     !field.value && "text-muted-foreground",
                                                 )}
                                                 disabled={isLoading}
+                                                type="button"
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {field.value ? (
@@ -192,40 +212,65 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
                                     </PopoverContent>
                                 </Popover>
                                 <FormDescription>When this procedure needs to be performed again</FormDescription>
-                                <FormMessage>{fieldState.error?.message}</FormMessage>
+                                <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
                             </FormItem>
                         )}
                     />
 
-                    <FormField
-                        control={petProcedureForm.control}
-                        name="product_used"
-                        render={({ field, fieldState }) => (
-                            <FormItem>
-                                <FormLabel>Product Used</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Enter product name" {...field} disabled={isLoading} />
-                                </FormControl>
-                                <FormDescription>The name of the medication or product used</FormDescription>
-                                <FormMessage>{fieldState.error?.message}</FormMessage>
-                            </FormItem>
-                        )}
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                            control={petProcedureForm.control}
+                            name="product_used"
+                            render={({ field, fieldState }) => (
+                                <FormItem>
+                                    <FormLabel>Product Used</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Enter product name" {...field} disabled={isLoading} />
+                                    </FormControl>
+                                    <FormDescription>The name of the medication or product used</FormDescription>
+                                    <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
+                                </FormItem>
+                            )}
+                        />
 
-                    <FormField
-                        control={petProcedureForm.control}
-                        name="dosage"
-                        render={({ field, fieldState }) => (
-                            <FormItem>
-                                <FormLabel>Dosage</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g. 10mg/kg" {...field} disabled={isLoading} />
-                                </FormControl>
-                                <FormDescription>The dosage of the medication or product</FormDescription>
-                                <FormMessage>{fieldState.error?.message}</FormMessage>
-                            </FormItem>
-                        )}
-                    />
+                        <FormField
+                            control={petProcedureForm.control}
+                            name="dosage"
+                            render={({ field, fieldState }) => (
+                                <FormItem>
+                                    <FormLabel>Dosage</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. 10mg/kg" {...field} disabled={isLoading} />
+                                    </FormControl>
+                                    <FormDescription>The dosage of the medication or product</FormDescription>
+                                    <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    {isUserView && (
+                        <FormField
+                            control={petProcedureForm.control}
+                            name="external_provider"
+                            render={({ field, fieldState }) => (
+                                <FormItem>
+                                    <FormLabel>Provider (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Who performed this procedure?"
+                                            {...field}
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Name of veterinarian or clinic that performed this procedure
+                                    </FormDescription>
+                                    <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
+                                </FormItem>
+                            )}
+                        />
+                    )}
                 </div>
 
                 <FormField
@@ -245,19 +290,14 @@ const PetProcedureForm = ({ petUuid, onSuccess, onCancel, petId }: PetProcedureF
                             <FormDescription>
                                 Any additional information about the procedure or observations
                             </FormDescription>
-                            <FormMessage>{fieldState.error?.message}</FormMessage>
+                            <FormMessage className="text-red-500">{fieldState.error?.message}</FormMessage>
                         </FormItem>
                     )}
                 />
 
                 <div className="flex justify-end space-x-4">
-                    {onCancel && (
-                        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-                            Cancel
-                        </Button>
-                    )}
                     <Button type="submit" disabled={isLoading}>
-                        {isLoading ? "Saving..." : "Add Procedure"}
+                        {isLoading ? "Saving..." : isUserView ? "Add Procedure Record" : "Record Procedure"}
                     </Button>
                 </div>
             </form>

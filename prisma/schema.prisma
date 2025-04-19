@@ -26,6 +26,7 @@ model appointments {
     vaccinations          vaccinations[]
     healthcare_procedures healthcare_procedures[]
     notifications         notifications[]
+    prescriptions         prescriptions[]
 }
 
 model documents {
@@ -188,6 +189,7 @@ model prescriptions {
     pet_id            Int?
     medication_id     Int?
     vet_id            Int?
+    appointment_id    Int?
     dosage            String         @db.VarChar(50)
     frequency         String         @db.VarChar(50)
     start_date        DateTime?      @db.Date
@@ -197,6 +199,7 @@ model prescriptions {
     medications       medications?   @relation(fields: [medication_id], references: [medication_id], onDelete: NoAction, onUpdate: NoAction)
     pets              pets?          @relation(fields: [pet_id], references: [pet_id], onDelete: NoAction, onUpdate: NoAction)
     veterinarians     veterinarians? @relation(fields: [vet_id], references: [vet_id], onDelete: NoAction, onUpdate: NoAction)
+    appointments      appointments?  @relation(fields: [appointment_id], references: [appointment_id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model user_settings {
@@ -297,7 +300,6 @@ model clinics {
     postal_code          String                 @db.VarChar(20)
     phone_number         String                 @db.VarChar(20)
     emergency_services   Boolean?               @default(false)
-    operating_hours      String?
     created_at           DateTime?              @default(now()) @db.Timestamptz(6)
     user_id              Int?
     latitude             Float                  @default(0)

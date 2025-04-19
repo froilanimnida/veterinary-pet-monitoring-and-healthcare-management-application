@@ -150,7 +150,7 @@ export function NotificationCard({ notification }: NotificationCardProps) {
                         </AvatarFallback>
                     </Avatar>
                     {notification.pets.name}
-                </Badge>
+                </Badge>,
             );
         }
 
@@ -159,7 +159,7 @@ export function NotificationCard({ notification }: NotificationCardProps) {
                 <Badge key="appt" variant="outline" className="flex items-center gap-1 text-[10px]">
                     <Calendar className="h-3 w-3" />
                     Appointment
-                </Badge>
+                </Badge>,
             );
         }
 
@@ -168,7 +168,7 @@ export function NotificationCard({ notification }: NotificationCardProps) {
                 <Badge key="post" variant="outline" className="flex items-center gap-1 text-[10px]">
                     <MessageCircle className="h-3 w-3" />
                     Forum Post
-                </Badge>
+                </Badge>,
             );
         }
 

@@ -147,7 +147,7 @@ const getClinicVeterinarians = async (): Promise<
 const getVeterinariansByClinic = async (
     clinicId: string,
 ): Promise<
-    ActionResponse<{ veterinarians: { id: string; name: string; specialization: veterinary_specialization }[] }>
+    ActionResponse<{ veterinarians: { id: number; name: string; specialization: veterinary_specialization }[] }>
 > => {
     try {
         if (!clinicId) return { success: false, error: "Clinic ID is required" };
@@ -171,7 +171,7 @@ const getVeterinariansByClinic = async (
             success: true,
             data: {
                 veterinarians: clinicVeterinarians.map((cv) => ({
-                    id: cv.veterinarians.vet_id.toString(),
+                    id: cv.veterinarians.vet_id,
                     name: cv.veterinarians.users
                         ? `${cv.veterinarians.users.first_name} ${cv.veterinarians.users.last_name}`
                         : "Unknown",

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -27,54 +27,37 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format, addDays } from "date-fns";
-import { z } from "zod";
-import { addPrescription, getMedicationsList } from "@/actions";
-
-const PrescriptionFormSchema = PrescriptionDefinition.extend({
-    //pet_uuid: z.string().uuid(),
-    appointment_uuid: z.string().uuid().optional(),
-    medication_id: z.number(),
-});
+import { addPrescription } from "@/actions";
+import type { medications } from "@prisma/client";
 
 interface PrescriptionFormProps {
     petId: number;
-    //petUuid: string;
-    appointmentUuid: string;
+    petUuid?: string;
+    appointmentUuid?: string;
+    appointmentId?: number;
+    vetId?: number;
+    isCheckIn?: boolean; // Flag to determine if the patient has checked in
+    medicationList: medications[] | [];
 }
 
-const PrescriptionForm = ({ petId, appointmentUuid }: PrescriptionFormProps) => {
+const PrescriptionForm = ({
+    petId,
+    petUuid,
+    appointmentUuid,
+    appointmentId,
+    vetId,
+    isCheckIn = true,
+    medicationList,
+}: PrescriptionFormProps) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [medications, setMedications] = useState<{ id: number; name: string }[]>([]);
-
-    useEffect(() => {
-        const fetchMedications = async () => {
-            try {
-                const response = await getMedicationsList();
-                if (!response.success) {
-                    throw new Error(response.error || "Failed to fetch medications");
-                }
-
-                setMedications(
-                    response.data.medication.map((med) => {
-                        return {
-                            id: med.medication_id,
-                            name: med.name,
-                        };
-                    }),
-                );
-            } catch (error) {
-                console.error("Error fetching medications:", error);
-            }
-        };
-
-        fetchMedications();
-    }, []);
-
     const form = useForm({
-        resolver: zodResolver(PrescriptionFormSchema),
+        resolver: zodResolver(PrescriptionDefinition),
         defaultValues: {
             pet_id: petId,
+            pet_uuid: petUuid,
             appointment_uuid: appointmentUuid,
+            appointment_id: appointmentId,
+            vet_id: vetId,
             medication_id: undefined,
             dosage: "",
             frequency: "",
@@ -91,14 +74,41 @@ const PrescriptionForm = ({ petId, appointmentUuid }: PrescriptionFormProps) => 
         if (response === undefined) {
             toast.dismiss();
             toast.success("Prescription issued successfully");
-            form.reset();
+            form.reset({
+                ...form.getValues(),
+                medication_id: undefined,
+                dosage: "",
+                frequency: "",
+                start_date: new Date(),
+                end_date: addDays(new Date(), 7),
+                refills_remaining: 0,
+            });
             setIsLoading(false);
-        } else {
-            setIsLoading(false);
-            toast.dismiss();
-            toast.error(!response.success ? response.error : "Failed to issue prescription");
+            return;
         }
+        if (response.success === false) {
+            toast.dismiss();
+            toast.error(response.error || "Failed to issue prescription");
+            setIsLoading(false);
+            return;
+        }
+        toast.dismiss();
+        toast.error("An unexpected error occurred");
+        toast.dismiss();
+        setIsLoading(false);
     };
+
+    if (!isCheckIn) {
+        return (
+            <div className="p-6 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+                <h3 className="font-medium text-lg mb-2">Patient Check-in Required</h3>
+                <p>
+                    You can only issue prescriptions for patients who have checked in for their appointment. Please
+                    check in the patient first.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <Form {...form}>
@@ -120,8 +130,8 @@ const PrescriptionForm = ({ petId, appointmentUuid }: PrescriptionFormProps) => 
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {medications.map((med) => (
-                                        <SelectItem key={med.id} value={med.id.toString()}>
+                                    {medicationList.map((med) => (
+                                        <SelectItem key={med.medication_id} value={med.medication_id.toString()}>
                                             {med.name}
                                         </SelectItem>
                                     ))}
@@ -269,9 +279,11 @@ const PrescriptionForm = ({ petId, appointmentUuid }: PrescriptionFormProps) => 
                     )}
                 />
 
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Issuing..." : "Issue Prescription"}
-                </Button>
+                <div className="flex justify-end space-x-4">
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Issuing..." : "Issue Prescription"}
+                    </Button>
+                </div>
             </form>
         </Form>
     );

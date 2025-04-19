@@ -67,13 +67,13 @@ export const authOptions: AuthOptions = {
             }
             return session;
         },
-        async signIn({ user, account, profile }) {
-            if (!user || !account || !profile || !account.provider || !profile.email) {
-                return false;
-            }
-            if (account.provider === "google") {
-                return profile.email.endsWith("@gmail.com");
-            }
+        async signIn() {
+            //if (!user || !account || !profile || !account.provider || !profile.email) {
+            //    return false;
+            //}
+            //if (account.provider === "google") {
+            //    return profile.email.endsWith("@gmail.com");
+            //}
             return true;
         },
     },

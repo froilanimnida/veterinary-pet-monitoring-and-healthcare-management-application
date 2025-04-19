@@ -37,7 +37,7 @@ export function getAppointmentSelectFields(
         handleVetChange: (value: string) => void;
 
         form: UseFormReturn<AppointmentControlSchema>;
-    }
+    },
 ): SelectFormField[] {
     return [
         {
